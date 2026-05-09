@@ -57,6 +57,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.lifeos.domain.permission.AllPermissionState
+import com.lifeos.domain.permission.HealthConnectStatus
 import com.lifeos.domain.permission.PermissionStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,6 +154,28 @@ fun OnboardingScreen(
                             context.startActivity(fallback)
                         }
                     },
+                    onInstallHealthConnect = {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            data = Uri.parse("market://details?id=com.google.android.apps.healthdata")
+                            setPackage("com.android.vending")
+                        }
+                        try {
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata")))
+                        }
+                    },
+                    onUpdateHealthConnect = {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            data = Uri.parse("market://details?id=com.google.android.apps.healthdata")
+                            setPackage("com.android.vending")
+                        }
+                        try {
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata")))
+                        }
+                    },
                     onComplete = {
                         viewModel.completeOnboarding()
                         onOnboardingComplete()
@@ -171,6 +194,8 @@ internal fun OnboardingContent(
     onOpenUsageStats: () -> Unit,
     onOpenBatteryOptimization: () -> Unit,
     onOpenAutoStart: () -> Unit,
+    onInstallHealthConnect: () -> Unit,
+    onUpdateHealthConnect: () -> Unit,
     onComplete: () -> Unit,
     showCompleteButton: Boolean = true
 ) {
@@ -202,27 +227,40 @@ internal fun OnboardingContent(
         }
 
         item {
-            if (state.healthConnectAvailable) {
-                val hcAllGranted = state.healthSteps == PermissionStatus.GRANTED &&
-                    state.healthHeartRate == PermissionStatus.GRANTED &&
-                    state.healthSleep == PermissionStatus.GRANTED
-                PermissionCard(
-                    icon = Icons.Default.Favorite,
-                    title = "Health Connect 健康数据",
-                    description = "读取步数、心率和睡眠数据",
-                    status = if (hcAllGranted) PermissionStatus.GRANTED else PermissionStatus.DENIED,
-                    actionLabel = if (hcAllGranted) null else "授权",
-                    onAction = onRequestHealthPermissions
-                )
-            } else {
-                PermissionCard(
-                    icon = Icons.Default.Favorite,
-                    title = "Health Connect 健康数据",
-                    description = "设备不支持 Health Connect 或需要更新",
-                    status = PermissionStatus.NOT_DETERMINED,
-                    actionLabel = null,
-                    onAction = {}
-                )
+            when (state.healthConnectStatus) {
+                HealthConnectStatus.AVAILABLE -> {
+                    val hcAllGranted = state.healthSteps == PermissionStatus.GRANTED &&
+                        state.healthHeartRate == PermissionStatus.GRANTED &&
+                        state.healthSleep == PermissionStatus.GRANTED
+                    PermissionCard(
+                        icon = Icons.Default.Favorite,
+                        title = "Health Connect 健康数据",
+                        description = "读取步数、心率和睡眠数据",
+                        status = if (hcAllGranted) PermissionStatus.GRANTED else PermissionStatus.DENIED,
+                        actionLabel = if (hcAllGranted) null else "授权",
+                        onAction = onRequestHealthPermissions
+                    )
+                }
+                HealthConnectStatus.UPDATE_REQUIRED -> {
+                    PermissionCard(
+                        icon = Icons.Default.Favorite,
+                        title = "Health Connect 健康数据",
+                        description = "Health Connect 版本过旧，请更新后重试",
+                        status = PermissionStatus.DENIED,
+                        actionLabel = "去更新",
+                        onAction = onUpdateHealthConnect
+                    )
+                }
+                HealthConnectStatus.NOT_INSTALLED -> {
+                    PermissionCard(
+                        icon = Icons.Default.Favorite,
+                        title = "Health Connect 健康数据",
+                        description = "需要安装 Health Connect 才能读取健康数据",
+                        status = PermissionStatus.DENIED,
+                        actionLabel = "去安装",
+                        onAction = onInstallHealthConnect
+                    )
+                }
             }
         }
 

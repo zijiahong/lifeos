@@ -12,6 +12,7 @@ import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import com.lifeos.domain.permission.AllPermissionState
 import com.lifeos.domain.permission.HealthConnectPermissions
+import com.lifeos.domain.permission.HealthConnectStatus
 import com.lifeos.domain.permission.PermissionRepository
 import com.lifeos.domain.permission.PermissionStatus
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -37,9 +38,12 @@ class PermissionRepositoryImpl @Inject constructor(
         return if (mode == AppOpsManager.MODE_ALLOWED) PermissionStatus.GRANTED else PermissionStatus.DENIED
     }
 
-    // sdkStatus() is the alpha11 API; getSdkStatus() was introduced in a later version
-    override fun checkHealthConnectAvailability(): Boolean {
-        return HealthConnectClient.sdkStatus(context) == HealthConnectClient.SDK_AVAILABLE
+    override fun checkHealthConnectStatus(): HealthConnectStatus {
+        return when (HealthConnectClient.sdkStatus(context)) {
+            HealthConnectClient.SDK_AVAILABLE -> HealthConnectStatus.AVAILABLE
+            HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> HealthConnectStatus.UPDATE_REQUIRED
+            else -> HealthConnectStatus.NOT_INSTALLED
+        }
     }
 
     // Fix #7: returns HealthConnectPermissions instead of Triple
@@ -78,8 +82,8 @@ class PermissionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getAllPermissionState(): AllPermissionState {
-        val hcAvailable = checkHealthConnectAvailability()
-        val hcPerms = if (hcAvailable) {
+        val hcStatus = checkHealthConnectStatus()
+        val hcPerms = if (hcStatus == HealthConnectStatus.AVAILABLE) {
             checkHealthConnectPermissions()
         } else {
             HealthConnectPermissions(
@@ -88,10 +92,9 @@ class PermissionRepositoryImpl @Inject constructor(
                 PermissionStatus.NOT_DETERMINED
             )
         }
-        // Fix #8: onboardingCompleted not included — caller reads it directly
         return AllPermissionState(
             usageStats = checkUsageStatsPermission(),
-            healthConnectAvailable = hcAvailable,
+            healthConnectStatus = hcStatus,
             healthSteps = hcPerms.steps,
             healthHeartRate = hcPerms.heartRate,
             healthSleep = hcPerms.sleep,
