@@ -11,6 +11,7 @@ import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import com.lifeos.domain.permission.AllPermissionState
+import com.lifeos.domain.permission.HealthConnectPermissions
 import com.lifeos.domain.permission.PermissionRepository
 import com.lifeos.domain.permission.PermissionStatus
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -23,10 +24,12 @@ class PermissionRepositoryImpl @Inject constructor(
 ) : PermissionRepository {
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    // Fix #9: obtain system services once in constructor rather than on every call
+    private val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+    private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
 
     override fun checkUsageStatsPermission(): PermissionStatus {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(
+        val mode = appOpsManager.checkOpNoThrow(
             AppOpsManager.OPSTR_GET_USAGE_STATS,
             Process.myUid(),
             context.packageName
@@ -34,21 +37,23 @@ class PermissionRepositoryImpl @Inject constructor(
         return if (mode == AppOpsManager.MODE_ALLOWED) PermissionStatus.GRANTED else PermissionStatus.DENIED
     }
 
-    override suspend fun checkHealthConnectAvailability(): Boolean {
+    // Fix #6: getSdkStatus is synchronous — suspend removed
+    override fun checkHealthConnectAvailability(): Boolean {
         return HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE
     }
 
-    override suspend fun checkHealthConnectPermissions(): Triple<PermissionStatus, PermissionStatus, PermissionStatus> {
+    // Fix #7: returns HealthConnectPermissions instead of Triple
+    override suspend fun checkHealthConnectPermissions(): HealthConnectPermissions {
         return try {
             val client = HealthConnectClient.getOrCreate(context)
             val granted = client.permissionController.getGrantedPermissions()
-            Triple(
-                if (HealthPermission.getReadPermission(StepsRecord::class) in granted) PermissionStatus.GRANTED else PermissionStatus.DENIED,
-                if (HealthPermission.getReadPermission(HeartRateRecord::class) in granted) PermissionStatus.GRANTED else PermissionStatus.DENIED,
-                if (HealthPermission.getReadPermission(SleepSessionRecord::class) in granted) PermissionStatus.GRANTED else PermissionStatus.DENIED
+            HealthConnectPermissions(
+                steps = if (HealthPermission.getReadPermission(StepsRecord::class) in granted) PermissionStatus.GRANTED else PermissionStatus.DENIED,
+                heartRate = if (HealthPermission.getReadPermission(HeartRateRecord::class) in granted) PermissionStatus.GRANTED else PermissionStatus.DENIED,
+                sleep = if (HealthPermission.getReadPermission(SleepSessionRecord::class) in granted) PermissionStatus.GRANTED else PermissionStatus.DENIED
             )
         } catch (e: Exception) {
-            Triple(PermissionStatus.DENIED, PermissionStatus.DENIED, PermissionStatus.DENIED)
+            HealthConnectPermissions(PermissionStatus.DENIED, PermissionStatus.DENIED, PermissionStatus.DENIED)
         }
     }
 
@@ -57,8 +62,7 @@ class PermissionRepositoryImpl @Inject constructor(
     }
 
     override fun checkBatteryOptimizationIgnored(): PermissionStatus {
-        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-        return if (pm.isIgnoringBatteryOptimizations(context.packageName)) {
+        return if (powerManager.isIgnoringBatteryOptimizations(context.packageName)) {
             PermissionStatus.GRANTED
         } else {
             PermissionStatus.DENIED
@@ -78,17 +82,21 @@ class PermissionRepositoryImpl @Inject constructor(
         val hcPerms = if (hcAvailable) {
             checkHealthConnectPermissions()
         } else {
-            Triple(PermissionStatus.NOT_DETERMINED, PermissionStatus.NOT_DETERMINED, PermissionStatus.NOT_DETERMINED)
+            HealthConnectPermissions(
+                PermissionStatus.NOT_DETERMINED,
+                PermissionStatus.NOT_DETERMINED,
+                PermissionStatus.NOT_DETERMINED
+            )
         }
+        // Fix #8: onboardingCompleted not included — caller reads it directly
         return AllPermissionState(
             usageStats = checkUsageStatsPermission(),
             healthConnectAvailable = hcAvailable,
-            healthSteps = hcPerms.first,
-            healthHeartRate = hcPerms.second,
-            healthSleep = hcPerms.third,
+            healthSteps = hcPerms.steps,
+            healthHeartRate = hcPerms.heartRate,
+            healthSleep = hcPerms.sleep,
             isXiaomiDevice = isXiaomiDevice(),
-            batteryOptIgnored = checkBatteryOptimizationIgnored(),
-            onboardingCompleted = isOnboardingCompleted()
+            batteryOptIgnored = checkBatteryOptimizationIgnored()
         )
     }
 

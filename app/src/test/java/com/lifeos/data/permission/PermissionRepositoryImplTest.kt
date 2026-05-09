@@ -4,7 +4,6 @@ import android.app.AppOpsManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.PowerManager
-import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -34,6 +33,7 @@ class PermissionRepositoryImplTest {
         prefsEditor = mock()
 
         whenever(context.packageName).thenReturn("com.lifeos")
+        // Fix #9: system services are now fetched in the constructor, so stubs must be set here
         whenever(context.getSystemService(Context.APP_OPS_SERVICE)).thenReturn(appOpsManager)
         whenever(context.getSystemService(Context.POWER_SERVICE)).thenReturn(powerManager)
         whenever(context.getSharedPreferences(any(), any())).thenReturn(sharedPrefs)
@@ -101,7 +101,7 @@ class PermissionRepositoryImplTest {
     }
 
     @Test
-    fun `isOnboardingCompleted returns true after markOnboardingCompleted`() {
+    fun `isOnboardingCompleted returns true when flag is set`() {
         whenever(sharedPrefs.getBoolean(any(), eq(false))).thenReturn(true)
 
         val result = buildRepo().isOnboardingCompleted()
@@ -111,6 +111,7 @@ class PermissionRepositoryImplTest {
 
     @Test
     fun `markOnboardingCompleted persists flag via SharedPreferences`() {
+        // Fix #1: previous last test had no assertions — replaced with this meaningful test
         buildRepo().markOnboardingCompleted()
 
         verify(prefsEditor).putBoolean("onboarding_completed", true)
@@ -118,19 +119,15 @@ class PermissionRepositoryImplTest {
     }
 
     @Test
-    fun `getAllPermissionState returns NOT_DETERMINED HC permissions when HC unavailable`() = runTest {
-        whenever(
-            appOpsManager.checkOpNoThrow(any(), any(), any())
-        ).thenReturn(AppOpsManager.MODE_ALLOWED)
-        whenever(powerManager.isIgnoringBatteryOptimizations(any())).thenReturn(false)
-        whenever(sharedPrefs.getBoolean(any(), any())).thenReturn(false)
+    fun `checkUsageStatsPermission returns DENIED for any non-ALLOWED mode`() {
+        listOf(AppOpsManager.MODE_ERRORED, AppOpsManager.MODE_DEFAULT).forEach { mode ->
+            whenever(
+                appOpsManager.checkOpNoThrow(any(), any(), any())
+            ).thenReturn(mode)
 
-        // HealthConnectClient.getSdkStatus is a static call — tested indirectly via
-        // integration tests; here we verify the structure when HC is unavailable.
-        // The impl catches exceptions from getOrCreate and returns NOT_DETERMINED.
-        val repo = buildRepo()
-        // We cannot easily unit-test the HC branch without an Android environment,
-        // but we verify the non-HC fields are populated correctly.
-        // HC availability check will throw or return unavailable without Android env.
+            val result = buildRepo().checkUsageStatsPermission()
+
+            assertEquals("Expected DENIED for mode $mode", PermissionStatus.DENIED, result)
+        }
     }
 }
