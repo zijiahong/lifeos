@@ -19,6 +19,7 @@ import com.lifeos.ui.screens.HealthScreen
 import com.lifeos.ui.screens.HistoryScreen
 import com.lifeos.ui.screens.HomeScreen
 import com.lifeos.ui.screens.permission.OnboardingScreen
+import com.lifeos.ui.screens.permission.PermissionSettingsScreen
 
 private const val ROUTE_ONBOARDING = "onboarding"
 
@@ -74,6 +75,7 @@ fun AppNavigation(startOnboarding: Boolean = false) {
             composable(BottomNavItem.Home.route) { HomeScreen() }
             composable(BottomNavItem.Health.route) { HealthScreen() }
             composable(BottomNavItem.History.route) { HistoryScreen() }
+            composable(BottomNavItem.Settings.route) { PermissionSettingsScreen() }
         }
     }
 }

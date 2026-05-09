@@ -164,14 +164,15 @@ fun OnboardingScreen(
 }
 
 @Composable
-private fun OnboardingContent(
+internal fun OnboardingContent(
     state: AllPermissionState,
     modifier: Modifier = Modifier,
     onRequestHealthPermissions: () -> Unit,
     onOpenUsageStats: () -> Unit,
     onOpenBatteryOptimization: () -> Unit,
     onOpenAutoStart: () -> Unit,
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
+    showCompleteButton: Boolean = true
 ) {
     LazyColumn(
         modifier = modifier
@@ -250,15 +251,17 @@ private fun OnboardingContent(
             }
         }
 
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = onComplete,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("完成设置")
+        if (showCompleteButton) {
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onComplete,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("完成设置")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
