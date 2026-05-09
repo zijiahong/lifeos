@@ -28,11 +28,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Health Connect integration -->
-        <activity
-            android:name="androidx.health.connect.client.PermissionController"
-            android:exported="true" />
-
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
