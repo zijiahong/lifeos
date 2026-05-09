@@ -10,6 +10,11 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- Required for Android 11+ package visibility: without this sdkStatus() cannot see HC -->
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
+
     <application
         android:name=".LifeOsApp"
         android:allowBackup="true"
