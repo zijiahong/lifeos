@@ -1,16 +1,20 @@
 package com.lifeos.domain.permission
 
-// Fix #7: named data class instead of Triple for readability
+enum class HealthConnectStatus {
+    AVAILABLE,
+    NOT_INSTALLED,
+    UPDATE_REQUIRED
+}
+
 data class HealthConnectPermissions(
     val steps: PermissionStatus,
     val heartRate: PermissionStatus,
     val sleep: PermissionStatus
 )
 
-// Fix #8: removed onboardingCompleted — it is not a permission state
 data class AllPermissionState(
     val usageStats: PermissionStatus,
-    val healthConnectAvailable: Boolean,
+    val healthConnectStatus: HealthConnectStatus,
     val healthSteps: PermissionStatus,
     val healthHeartRate: PermissionStatus,
     val healthSleep: PermissionStatus,
@@ -20,8 +24,7 @@ data class AllPermissionState(
 
 interface PermissionRepository {
     fun checkUsageStatsPermission(): PermissionStatus
-    // Fix #6: getSdkStatus is synchronous — no suspend needed
-    fun checkHealthConnectAvailability(): Boolean
+    fun checkHealthConnectStatus(): HealthConnectStatus
     suspend fun checkHealthConnectPermissions(): HealthConnectPermissions
     fun isXiaomiDevice(): Boolean
     fun checkBatteryOptimizationIgnored(): PermissionStatus

@@ -113,6 +113,8 @@ fun PermissionSettingsScreen(
                             context.startActivity(fallback)
                         }
                     },
+                    onInstallHealthConnect = { openHealthConnectStore(context) },
+                    onUpdateHealthConnect = { openHealthConnectStore(context) },
                     onComplete = {}
                 )
             }
