@@ -37,9 +37,9 @@ class PermissionRepositoryImpl @Inject constructor(
         return if (mode == AppOpsManager.MODE_ALLOWED) PermissionStatus.GRANTED else PermissionStatus.DENIED
     }
 
-    // Fix #6: getSdkStatus is synchronous — suspend removed
+    // Fix #6: isAvailable() is the correct API in alpha11 (getSdkStatus introduced later)
     override fun checkHealthConnectAvailability(): Boolean {
-        return HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE
+        return HealthConnectClient.isAvailable(context)
     }
 
     // Fix #7: returns HealthConnectPermissions instead of Triple
