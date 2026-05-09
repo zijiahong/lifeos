@@ -69,7 +69,6 @@ fun OnboardingScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // Fix #3: remember to avoid reallocating the Set on every recomposition
     val healthPermissions = remember {
         setOf(
             HealthPermission.getReadPermission(StepsRecord::class),
@@ -154,28 +153,8 @@ fun OnboardingScreen(
                             context.startActivity(fallback)
                         }
                     },
-                    onInstallHealthConnect = {
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse("market://details?id=com.google.android.apps.healthdata")
-                            setPackage("com.android.vending")
-                        }
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata")))
-                        }
-                    },
-                    onUpdateHealthConnect = {
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse("market://details?id=com.google.android.apps.healthdata")
-                            setPackage("com.android.vending")
-                        }
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata")))
-                        }
-                    },
+                    onInstallHealthConnect = { openHealthConnectStore(context) },
+                    onUpdateHealthConnect = { openHealthConnectStore(context) },
                     onComplete = {
                         viewModel.completeOnboarding()
                         onOnboardingComplete()

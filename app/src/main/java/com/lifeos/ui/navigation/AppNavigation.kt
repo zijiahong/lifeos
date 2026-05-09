@@ -30,7 +30,6 @@ fun AppNavigation(startOnboarding: Boolean = false) {
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    // Fix #5: guard against null currentRoute during NavHost initialisation to prevent flash
     val showBottomBar = currentRoute != null && currentRoute != ROUTE_ONBOARDING
 
     Scaffold(

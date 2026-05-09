@@ -25,7 +25,6 @@ class PermissionRepositoryImpl @Inject constructor(
 ) : PermissionRepository {
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    // Fix #9: obtain system services once in constructor rather than on every call
     private val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
     private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
 
@@ -46,7 +45,6 @@ class PermissionRepositoryImpl @Inject constructor(
         }
     }
 
-    // Fix #7: returns HealthConnectPermissions instead of Triple
     override suspend fun checkHealthConnectPermissions(): HealthConnectPermissions {
         return try {
             val client = HealthConnectClient.getOrCreate(context)
