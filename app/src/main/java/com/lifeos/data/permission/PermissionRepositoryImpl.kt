@@ -38,7 +38,7 @@ class PermissionRepositoryImpl @Inject constructor(
     }
 
     override fun checkHealthConnectStatus(): HealthConnectStatus {
-        return when (HealthConnectClient.sdkStatus(context)) {
+        return when (HealthConnectClient.getSdkStatus(context)) {
             HealthConnectClient.SDK_AVAILABLE -> HealthConnectStatus.AVAILABLE
             HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> HealthConnectStatus.UPDATE_REQUIRED
             else -> HealthConnectStatus.NOT_INSTALLED
