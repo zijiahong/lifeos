@@ -19,10 +19,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val startOnboarding = !permissionRepository.isOnboardingCompleted()
+        val startOnSettings = !permissionRepository.isOnboardingCompleted()
+        if (startOnSettings) permissionRepository.markOnboardingCompleted()
         setContent {
             LifeOsTheme {
-                AppNavigation(startOnboarding = startOnboarding)
+                AppNavigation(startOnSettings = startOnSettings)
             }
         }
     }
