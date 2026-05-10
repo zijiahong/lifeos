@@ -153,8 +153,7 @@ fun OnboardingScreen(
                             context.startActivity(fallback)
                         }
                     },
-                    onInstallHealthConnect = { openHealthConnectStore(context) },
-                    onUpdateHealthConnect = { openHealthConnectStore(context) },
+                    onOpenHealthConnectStore = { openHealthConnectStore(context) },
                     onComplete = {
                         viewModel.completeOnboarding()
                         onOnboardingComplete()
@@ -173,8 +172,7 @@ internal fun OnboardingContent(
     onOpenUsageStats: () -> Unit,
     onOpenBatteryOptimization: () -> Unit,
     onOpenAutoStart: () -> Unit,
-    onInstallHealthConnect: () -> Unit,
-    onUpdateHealthConnect: () -> Unit,
+    onOpenHealthConnectStore: () -> Unit,
     onComplete: () -> Unit,
     showCompleteButton: Boolean = true
 ) {
@@ -227,7 +225,7 @@ internal fun OnboardingContent(
                         description = "Health Connect 版本过旧，请更新后重试",
                         status = PermissionStatus.DENIED,
                         actionLabel = "去更新",
-                        onAction = onUpdateHealthConnect
+                        onAction = onOpenHealthConnectStore
                     )
                 }
                 HealthConnectStatus.NOT_INSTALLED -> {
@@ -237,7 +235,7 @@ internal fun OnboardingContent(
                         description = "需要安装 Health Connect 才能读取健康数据",
                         status = PermissionStatus.DENIED,
                         actionLabel = "去安装",
-                        onAction = onInstallHealthConnect
+                        onAction = onOpenHealthConnectStore
                     )
                 }
             }
